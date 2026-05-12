@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { Section } from '@/lib/schema/page'
 import { useAppDispatch } from '@/store'
 import { updateSectionProps } from '@/store/slices/draftPage'
@@ -19,31 +20,40 @@ function Field({
   required?: boolean
   multiline?: boolean
 }) {
+  const [touched, setTouched] = useState(false)
   const inputId = `prop-${id}`
+  const errorId = `prop-${id}-error`
+  const hasError = required && touched && value.trim() === ''
+
+  const sharedProps = {
+    id: inputId,
+    value,
+    'aria-required': required,
+    'aria-describedby': hasError ? errorId : undefined,
+    'aria-invalid': hasError || undefined,
+    onBlur: () => setTouched(true),
+    className: `rounded-md border px-3 py-2 text-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      hasError ? 'border-destructive' : 'border-input'
+    }`,
+  }
+
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={inputId} className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
         {label}
         {required && <span aria-hidden="true" className="ml-1 text-destructive">*</span>}
       </label>
+
       {multiline ? (
-        <textarea
-          id={inputId}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={3}
-          aria-required={required}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
+        <textarea {...sharedProps} rows={3} onChange={(e) => onChange(e.target.value)} className={`${sharedProps.className} resize-y`} />
       ) : (
-        <input
-          id={inputId}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          aria-required={required}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
+        <input {...sharedProps} type="text" onChange={(e) => onChange(e.target.value)} />
+      )}
+
+      {hasError && (
+        <p id={errorId} role="alert" className="text-xs text-destructive">
+          {label} is required.
+        </p>
       )}
     </div>
   )

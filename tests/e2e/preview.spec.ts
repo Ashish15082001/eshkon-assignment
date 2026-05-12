@@ -35,3 +35,38 @@ test.describe('Studio route (unauthenticated)', () => {
     await expect(page).toHaveURL(/\/api\/auth\/signin/)
   })
 })
+
+test.describe('Studio route (authenticated editor)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/api/auth/signin')
+    await page.fill('input[name="email"]', 'editor@example.com')
+    await page.fill('input[name="password"]', 'editor123')
+    await page.click('button[type="submit"]')
+    // Wait until redirected away from signin
+    await page.waitForURL((url) => !url.pathname.includes('/signin'), { timeout: 10_000 })
+  })
+
+  test('loads studio editor for /studio/home', async ({ page }) => {
+    await page.goto('/studio/home')
+    await expect(page.getByRole('complementary', { name: 'Studio sidebar' })).toBeVisible()
+  })
+
+  test('can add a section', async ({ page }) => {
+    await page.goto('/studio/home')
+    await page.getByRole('button', { name: /add section/i }).click()
+    await page.getByRole('option', { name: /hero/i }).click()
+    await expect(page.getByRole('listitem').filter({ hasText: 'Hero' })).toBeVisible()
+  })
+
+  test('axe: /studio/home has no critical violations', async ({ page }) => {
+    await page.goto('/studio/home')
+    await expect(page.getByRole('complementary', { name: 'Studio sidebar' })).toBeVisible()
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze()
+
+    const critical = results.violations.filter((v) => v.impact === 'critical')
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0)
+  })
+})
