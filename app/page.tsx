@@ -39,7 +39,7 @@ export default async function Home() {
               </Link>
             ) : (
               <Link
-                href="/api/auth/signin"
+                href="/auth/signin"
                 className="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Sign in
@@ -62,16 +62,44 @@ export default async function Home() {
 
         {/* Sign-in nudge for unauthenticated visitors */}
         {!session && (
-          <div className="mb-8 rounded-lg border border-border bg-muted/40 px-5 py-4 flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              Want to edit pages? Sign in with an editor or publisher account.
-            </p>
-            <Link
-              href="/api/auth/signin"
-              className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              Sign in
-            </Link>
+          <div className="mb-8 rounded-lg border border-border bg-muted/40 px-5 py-5 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                Sign in to edit pages in the Studio. Use one of the demo accounts below.
+              </p>
+              <Link
+                href="/auth/signin"
+                className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Sign in
+              </Link>
+            </div>
+            <table className="w-full text-sm border-collapse" aria-label="Demo accounts">
+              <thead>
+                <tr className="text-left text-xs text-muted-foreground uppercase tracking-wide">
+                  <th className="pb-1 pr-6 font-medium">Email</th>
+                  <th className="pb-1 pr-6 font-medium">Password</th>
+                  <th className="pb-1 font-medium">Can do</th>
+                </tr>
+              </thead>
+              <tbody className="font-mono divide-y divide-border">
+                <tr>
+                  <td className="py-1.5 pr-6">viewer@example.com</td>
+                  <td className="py-1.5 pr-6">viewer123</td>
+                  <td className="py-1.5 font-sans text-muted-foreground">Preview only</td>
+                </tr>
+                <tr>
+                  <td className="py-1.5 pr-6">editor@example.com</td>
+                  <td className="py-1.5 pr-6">editor123</td>
+                  <td className="py-1.5 font-sans text-muted-foreground">Edit pages</td>
+                </tr>
+                <tr>
+                  <td className="py-1.5 pr-6">publisher@example.com</td>
+                  <td className="py-1.5 pr-6">publisher123</td>
+                  <td className="py-1.5 font-sans text-muted-foreground">Edit + publish</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         )}
 

@@ -11,7 +11,7 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith('/studio')) {
     if (!token) {
       const url = req.nextUrl.clone()
-      url.pathname = '/api/auth/signin'
+      url.pathname = '/auth/signin'
       url.searchParams.set('callbackUrl', req.nextUrl.href)
       return NextResponse.redirect(url)
     }

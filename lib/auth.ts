@@ -28,6 +28,9 @@ export const authOptions: NextAuthOptions = {
       return session
     },
   },
+  pages: {
+    signIn: '/auth/signin',
+  },
   // Fallback keeps dev working without .env.local; must be overridden in production
   secret: process.env.NEXTAUTH_SECRET ?? 'dev-secret-replace-in-production',
 }
