@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/store'
 import { loadPage, addSection } from '@/store/slices/draftPage'
 import { selectSection } from '@/store/slices/ui'
 import { publishStart, publishSuccess, publishError, resetPublish } from '@/store/slices/publish'
-import { canPublish } from '@/lib/rbac/roles'
+import { canPublish, type Role } from '@/lib/rbac/roles'
 import SectionList from './SectionList'
 import PropsForm from './PropsForm'
 import PageRenderer from '@/components/PageRenderer'
@@ -61,10 +61,10 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
   const page = useAppSelector((s) => s.draftPage.page)
   const selectedId = useAppSelector((s) => s.ui.selectedSectionId)
   const publish = useAppSelector((s) => s.publish)
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
 
-  const role = (session?.user as { role?: string } | undefined)?.role ?? 'editor'
-  const isPublisher = canPublish(role as 'viewer' | 'editor' | 'publisher')
+  const role = (session?.user as { role?: string } | undefined)?.role as Role | undefined
+  const isPublisher = sessionStatus === 'authenticated' && !!role && canPublish(role)
 
   useEffect(() => {
     dispatch(loadPage(initialPage))
@@ -139,12 +139,18 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
             onClick={handlePublish}
             disabled={!isPublisher || publish.status === 'pending'}
             aria-disabled={!isPublisher || publish.status === 'pending'}
-            title={!isPublisher ? 'Publisher role required' : undefined}
             className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {publish.status === 'pending' ? 'Publishing…' : 'Publish'}
           </button>
         </header>
+
+        {/* Role notice for non-publishers */}
+        {sessionStatus === 'authenticated' && !isPublisher && (
+          <p className="mx-4 mt-2 text-xs text-muted-foreground">
+            Signed in as <span className="font-medium capitalize">{role ?? 'editor'}</span> — publish requires the <span className="font-medium">publisher</span> role.
+          </p>
+        )}
 
         {/* Publish feedback */}
         {publish.status === 'success' && (
@@ -154,12 +160,27 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
             className="mx-4 mt-3 rounded-md bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-800"
           >
             <p className="font-semibold">Published v{publish.version}</p>
-            <button
-              onClick={() => dispatch(resetPublish())}
-              className="mt-1 underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-800"
-            >
-              Dismiss
-            </button>
+            {publish.changelog && publish.changelog.length > 0 && (
+              <ul className="mt-1 space-y-0.5 list-disc list-inside text-green-700">
+                {publish.changelog.map((entry, i) => <li key={i}>{entry}</li>)}
+              </ul>
+            )}
+            <div className="mt-2 flex gap-3">
+              <a
+                href={`/preview/${page.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-800"
+              >
+                View page ↗
+              </a>
+              <button
+                onClick={() => dispatch(resetPublish())}
+                className="underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-800"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
         {publish.status === 'error' && (
