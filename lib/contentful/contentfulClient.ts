@@ -1,6 +1,6 @@
 import { createClient, type EntrySkeletonType } from 'contentful'
-import { PageSchema } from '@/lib/schema/page'
-import type { Page } from '@/lib/schema/page'
+import { PageSchema, SectionSchema, UnknownSectionSchema } from '@/lib/schema/page'
+import type { Page, AnySection } from '@/lib/schema/page'
 
 // ---------------------------------------------------------------------------
 // Contentful content-type shapes (stay inside this file — never re-export)
@@ -146,7 +146,8 @@ export async function getPageBySlug(slug: string, preview = false): Promise<Page
 
   const client = preview ? makePreviewClient() : makeDeliveryClient()
 
-  const result = await client.getEntries<PageSkeleton>({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await (client as any).getEntries({
     content_type: 'page',
     'fields.slug': slug,
     include: 2,
@@ -156,30 +157,41 @@ export async function getPageBySlug(slug: string, preview = false): Promise<Page
   const entry = result.items[0]
   if (!entry) return null
 
-  const raw = {
+  const pageMeta = PageSchema.omit({ sections: true }).safeParse({
     pageId: entry.sys.id,
     slug: entry.fields.slug,
     title: entry.fields.title,
-    sections: Array.isArray(entry.fields.sections)
-      ? entry.fields.sections
-          .filter((s): s is NonNullable<typeof s> => Boolean(s && 'fields' in s))
-          .map((s) => ({
-            id: s.sys.id,
-            type: (s as unknown as { fields: SectionFields }).fields.type,
-            props: (s as unknown as { fields: SectionFields }).fields.props ?? {},
-          }))
-      : [],
-  }
+  })
 
-  const parsed = PageSchema.safeParse(raw)
-
-  if (!parsed.success) {
-    console.error(
-      `[contentfulClient] Page "${slug}" failed schema validation:`,
-      parsed.error.issues
-    )
+  if (!pageMeta.success) {
+    console.error(`[contentfulClient] Page "${slug}" failed meta validation:`, pageMeta.error.issues)
     return null
   }
 
-  return parsed.data
+  // Validate each section individually — unknown types are preserved as AnySection
+  // so the renderer can show UnsupportedSection instead of 404-ing the whole page.
+  const rawSections = entry.fields.sections as unknown as unknown[]
+  const sections: AnySection[] = Array.isArray(rawSections)
+    ? rawSections
+        .filter((s): s is NonNullable<typeof s> => Boolean(s && typeof s === 'object' && 'fields' in s))
+        .map((s) => {
+          const entry = s as { sys: { id: string }; fields: SectionFields }
+          const raw = {
+            id: entry.sys.id,
+            type: entry.fields.type,
+            props: entry.fields.props ?? {},
+          }
+          const known = SectionSchema.safeParse(raw)
+          if (known.success) return known.data
+          const unknown = UnknownSectionSchema.safeParse(raw)
+          if (unknown.success) {
+            console.warn(`[contentfulClient] Unknown section type "${raw.type}" on page "${slug}" — rendering as UnsupportedSection`)
+            return unknown.data
+          }
+          return null
+        })
+        .filter((s): s is AnySection => s !== null)
+    : []
+
+  return { ...pageMeta.data, sections } as Page
 }

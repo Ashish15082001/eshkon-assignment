@@ -41,6 +41,15 @@ export const SectionSchema = z.discriminatedUnion('type', [
   z.object({ id: z.string(), type: z.literal('cta'), props: CtaPropsSchema }),
 ])
 
+// Catch-all for section types not yet in the registry.
+// Used only in the Contentful adapter — never mixed into SectionSchema to preserve
+// discriminated-union narrowing in the editor (PropsForm, draftPage slice).
+export const UnknownSectionSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  props: z.record(z.string(), z.unknown()),
+})
+
 export const PageSchema = z.object({
   pageId: z.string(),
   slug: z.string(),
@@ -53,4 +62,7 @@ export type FeatureGridProps = z.infer<typeof FeatureGridPropsSchema>
 export type TestimonialProps = z.infer<typeof TestimonialPropsSchema>
 export type CtaProps = z.infer<typeof CtaPropsSchema>
 export type Section = z.infer<typeof SectionSchema>
+export type UnknownSection = z.infer<typeof UnknownSectionSchema>
+// AnySection is what the renderer works with — known typed sections + unknown pass-throughs
+export type AnySection = Section | UnknownSection
 export type Page = z.infer<typeof PageSchema>

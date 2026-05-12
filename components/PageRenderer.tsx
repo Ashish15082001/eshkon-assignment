@@ -1,10 +1,18 @@
 import type { ComponentType } from 'react'
-import type { Page, Section } from '@/lib/schema/page'
-import { sectionRegistry } from '@/lib/registry/sectionRegistry'
+import type { Page, AnySection } from '@/lib/schema/page'
+import { sectionRegistry, isRegisteredType } from '@/lib/registry/sectionRegistry'
 import ErrorBoundary from '@/components/shared/ErrorBoundary'
+import UnsupportedSection from '@/components/sections/UnsupportedSection'
 
-function SectionSlot({ section }: { section: Section }) {
-  // Double cast via unknown: Zod validates data at the adapter boundary; registry keys match Section types 1-to-1
+// Accepts the strict Page type from the editor AND loosely-typed pages from the
+// Contentful adapter (which may include unknown section types from the CMS).
+type RenderablePage = Omit<Page, 'sections'> & { sections: AnySection[] }
+
+function SectionSlot({ section }: { section: AnySection }) {
+  if (!isRegisteredType(section.type)) {
+    return <UnsupportedSection type={section.type} />
+  }
+
   const { component: Component } = sectionRegistry[section.type] as unknown as {
     component: ComponentType<Record<string, unknown>>
   }
@@ -15,7 +23,7 @@ function SectionSlot({ section }: { section: Section }) {
   )
 }
 
-export default function PageRenderer({ page }: { page: Page }) {
+export default function PageRenderer({ page }: { page: RenderablePage }) {
   return (
     <main>
       {page.sections.map((section) => (
