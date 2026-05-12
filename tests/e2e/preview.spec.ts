@@ -1,5 +1,29 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { writeFileSync, mkdirSync } from 'fs'
+import { join } from 'path'
+
+type AxeResults = Awaited<ReturnType<InstanceType<typeof AxeBuilder>['analyze']>>
+
+function saveAxeReport(url: string, results: AxeResults) {
+  const dir = join(process.cwd(), 'tests/e2e/results')
+  mkdirSync(dir, { recursive: true })
+  const safeName = url.replace(/\//g, '-').replace(/^-+|-+$/g, '')
+  writeFileSync(
+    join(dir, `axe-${safeName}.json`),
+    JSON.stringify(
+      {
+        url,
+        timestamp: new Date().toISOString(),
+        violations: results.violations,
+        passCount: results.passes.length,
+        incompleteCount: results.incomplete.length,
+      },
+      null,
+      2
+    )
+  )
+}
 
 test.describe('Preview route', () => {
   test('renders hero section on /preview/home', async ({ page }) => {
@@ -23,6 +47,8 @@ test.describe('Preview route', () => {
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
       .analyze()
+
+    saveAxeReport('/preview/home', results)
 
     const critical = results.violations.filter((v) => v.impact === 'critical')
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0)
@@ -65,6 +91,8 @@ test.describe('Studio route (authenticated editor)', () => {
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
       .analyze()
+
+    saveAxeReport('/studio/home', results)
 
     const critical = results.violations.filter((v) => v.impact === 'critical')
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0)

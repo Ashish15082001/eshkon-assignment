@@ -24,6 +24,16 @@ describe('diffPages', () => {
     expect(changelog.some((c) => c.includes('headline'))).toBe(true)
   })
 
+  it('returns minor when an optional prop is added to an existing section', () => {
+    const modified: Page = {
+      ...base,
+      sections: [{ id: 's1', type: 'hero', props: { headline: 'Hello', subheadline: 'World' } }],
+    }
+    const { bump, changelog } = diffPages(base, modified)
+    expect(bump).toBe('minor')
+    expect(changelog.some((c) => c.includes('subheadline'))).toBe(true)
+  })
+
   it('returns minor when a section is added', () => {
     const modified: Page = {
       ...base,

@@ -41,6 +41,28 @@ describe('SectionSchema', () => {
     ).toBe(true)
   })
 
+  it('rejects featureGrid section with feature missing required title', () => {
+    expect(
+      SectionSchema.safeParse({
+        id: '4',
+        type: 'featureGrid',
+        props: { features: [{ description: 'Desc' }] },
+      }).success
+    ).toBe(false)
+  })
+
+  it('rejects testimonial section missing required quote', () => {
+    expect(
+      SectionSchema.safeParse({ id: '3', type: 'testimonial', props: { author: 'Jane' } }).success
+    ).toBe(false)
+  })
+
+  it('rejects testimonial section missing required author', () => {
+    expect(
+      SectionSchema.safeParse({ id: '3', type: 'testimonial', props: { quote: 'Great!' } }).success
+    ).toBe(false)
+  })
+
   it('rejects unknown section type', () => {
     expect(
       SectionSchema.safeParse({ id: '5', type: 'unknown', props: {} }).success

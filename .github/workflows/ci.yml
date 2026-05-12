@@ -28,7 +28,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Unit tests
-        run: npx jest
+        run: npm test
 
       - name: Build
         run: npm run build
@@ -49,7 +49,19 @@ jobs:
           CONTENTFUL_ACCESS_TOKEN: ${{ secrets.CONTENTFUL_ACCESS_TOKEN }}
           CONTENTFUL_PREVIEW_TOKEN: ${{ secrets.CONTENTFUL_PREVIEW_TOKEN }}
 
-      - name: Upload axe results
+      - name: Build a11y report
+        if: always()
+        run: node tests/e2e/build-a11y-report.js
+
+      - name: Upload a11y report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report
+          path: tests/e2e/results/a11y-report.json
+          retention-days: 30
+
+      - name: Upload Playwright results
         if: always()
         uses: actions/upload-artifact@v4
         with:
