@@ -26,6 +26,60 @@ interface PageSkeleton extends EntrySkeletonType {
 }
 
 // ---------------------------------------------------------------------------
+// Mock data — used when Contentful credentials are not configured
+// ---------------------------------------------------------------------------
+
+const MOCK_PAGES: Pick<Page, 'slug' | 'title'>[] = [
+  { slug: 'home', title: 'Home Page' },
+  { slug: 'pricing', title: 'Pricing Page' },
+  { slug: 'about', title: 'About Us' },
+]
+
+const MOCK_PAGE_MAP: Record<string, Page> = {
+  home: {
+    slug: 'home',
+    title: 'Home Page',
+    sections: [
+      {
+        id: 'mock-hero',
+        type: 'hero',
+        props: { headline: 'Welcome to Page Studio', subheadline: 'Build pages visually.' },
+      },
+    ],
+  },
+  pricing: {
+    slug: 'pricing',
+    title: 'Pricing Page',
+    sections: [
+      {
+        id: 'mock-cta',
+        type: 'cta',
+        props: { headline: 'Simple pricing', label: 'Get started', url: '#' },
+      },
+    ],
+  },
+  about: {
+    slug: 'about',
+    title: 'About Us',
+    sections: [
+      {
+        id: 'mock-testimonial',
+        type: 'testimonial',
+        props: { quote: 'Great product!', author: 'Jane Doe' },
+      },
+    ],
+  },
+}
+
+function hasDeliveryCredentials() {
+  return Boolean(process.env.CONTENTFUL_SPACE_ID && process.env.CONTENTFUL_ACCESS_TOKEN)
+}
+
+function hasPreviewCredentials() {
+  return Boolean(process.env.CONTENTFUL_SPACE_ID && process.env.CONTENTFUL_PREVIEW_TOKEN)
+}
+
+// ---------------------------------------------------------------------------
 // Client factory — separate delivery and preview clients
 // ---------------------------------------------------------------------------
 
@@ -64,6 +118,10 @@ function makePreviewClient() {
 // ---------------------------------------------------------------------------
 
 export async function getAllPages(preview = false): Promise<Pick<Page, 'slug' | 'title'>[]> {
+  if (preview ? !hasPreviewCredentials() : !hasDeliveryCredentials()) {
+    return MOCK_PAGES
+  }
+
   const client = preview ? makePreviewClient() : makeDeliveryClient()
 
   const result = await client.getEntries<PageSkeleton>({
@@ -79,6 +137,10 @@ export async function getAllPages(preview = false): Promise<Pick<Page, 'slug' | 
 }
 
 export async function getPageBySlug(slug: string, preview = false): Promise<Page | null> {
+  if (preview ? !hasPreviewCredentials() : !hasDeliveryCredentials()) {
+    return MOCK_PAGE_MAP[slug] ?? null
+  }
+
   const client = preview ? makePreviewClient() : makeDeliveryClient()
 
   const result = await client.getEntries<PageSkeleton>({
