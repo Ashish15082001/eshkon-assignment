@@ -42,6 +42,7 @@ export const SectionSchema = z.discriminatedUnion('type', [
 ])
 
 export const PageSchema = z.object({
+  pageId: z.string(),
   slug: z.string(),
   title: z.string(),
   sections: z.array(SectionSchema),

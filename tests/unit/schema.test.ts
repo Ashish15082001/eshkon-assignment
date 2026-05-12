@@ -52,6 +52,7 @@ describe('PageSchema', () => {
   it('accepts a valid page', () => {
     expect(
       PageSchema.safeParse({
+        pageId: 'page-1',
         slug: 'home',
         title: 'Home',
         sections: [{ id: '1', type: 'hero', props: { headline: 'Hi' } }],
@@ -61,13 +62,19 @@ describe('PageSchema', () => {
 
   it('accepts a page with no sections', () => {
     expect(
-      PageSchema.safeParse({ slug: 'empty', title: 'Empty', sections: [] }).success
+      PageSchema.safeParse({ pageId: 'page-2', slug: 'empty', title: 'Empty', sections: [] }).success
     ).toBe(true)
   })
 
   it('rejects a page missing slug', () => {
     expect(
-      PageSchema.safeParse({ title: 'No slug', sections: [] }).success
+      PageSchema.safeParse({ pageId: 'page-3', title: 'No slug', sections: [] }).success
+    ).toBe(false)
+  })
+
+  it('rejects a page missing pageId', () => {
+    expect(
+      PageSchema.safeParse({ slug: 'home', title: 'Home', sections: [] }).success
     ).toBe(false)
   })
 })

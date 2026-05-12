@@ -1,6 +1,7 @@
 {
   "version": "1.0.1",
   "page": {
+    "pageId": "contentful-home-page",
     "slug": "Home",
     "title": "Home",
     "sections": [

@@ -2,6 +2,7 @@ import { diffPages, incrementVersion } from '@/lib/semver/diff'
 import type { Page } from '@/lib/schema/page'
 
 const base: Page = {
+  pageId: 'page-test',
   slug: 'test',
   title: 'Test',
   sections: [{ id: 's1', type: 'hero', props: { headline: 'Hello' } }],

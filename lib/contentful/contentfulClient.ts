@@ -37,6 +37,7 @@ const MOCK_PAGES: Pick<Page, 'slug' | 'title'>[] = [
 
 const MOCK_PAGE_MAP: Record<string, Page> = {
   home: {
+    pageId: 'mock-home',
     slug: 'home',
     title: 'Home Page',
     sections: [
@@ -48,6 +49,7 @@ const MOCK_PAGE_MAP: Record<string, Page> = {
     ],
   },
   pricing: {
+    pageId: 'mock-pricing',
     slug: 'pricing',
     title: 'Pricing Page',
     sections: [
@@ -59,6 +61,7 @@ const MOCK_PAGE_MAP: Record<string, Page> = {
     ],
   },
   about: {
+    pageId: 'mock-about',
     slug: 'about',
     title: 'About Us',
     sections: [
@@ -154,6 +157,7 @@ export async function getPageBySlug(slug: string, preview = false): Promise<Page
   if (!entry) return null
 
   const raw = {
+    pageId: entry.sys.id,
     slug: entry.fields.slug,
     title: entry.fields.title,
     sections: Array.isArray(entry.fields.sections)

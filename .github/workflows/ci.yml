@@ -34,6 +34,9 @@ jobs:
         run: npm run build
         env:
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret' }}
+          CONTENTFUL_SPACE_ID: ${{ secrets.CONTENTFUL_SPACE_ID }}
+          CONTENTFUL_ACCESS_TOKEN: ${{ secrets.CONTENTFUL_ACCESS_TOKEN }}
+          CONTENTFUL_PREVIEW_TOKEN: ${{ secrets.CONTENTFUL_PREVIEW_TOKEN }}
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -42,6 +45,9 @@ jobs:
         run: npx playwright test
         env:
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-secret' }}
+          CONTENTFUL_SPACE_ID: ${{ secrets.CONTENTFUL_SPACE_ID }}
+          CONTENTFUL_ACCESS_TOKEN: ${{ secrets.CONTENTFUL_ACCESS_TOKEN }}
+          CONTENTFUL_PREVIEW_TOKEN: ${{ secrets.CONTENTFUL_PREVIEW_TOKEN }}
 
       - name: Upload axe results
         if: always()
