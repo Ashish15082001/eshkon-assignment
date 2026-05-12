@@ -1,5 +1,5 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.2",
   "page": {
     "pageId": "6di5xgV9SFShKchTfaYCXA",
     "slug": "Home",
@@ -9,7 +9,7 @@
         "id": "702KGr1ICEsyrGltyBlI1V",
         "type": "hero",
         "props": {
-          "headline": "Welcome to my website",
+          "headline": "Welcome to my site",
           "subheadline": "Build something great",
           "ctaLabel": "Get Started",
           "ctaUrl": "/pricing"
@@ -60,5 +60,5 @@
   "changelog": [
     "Section 702KGr1ICEsyrGltyBlI1V: prop \"headline\" updated"
   ],
-  "publishedAt": "2026-05-12T19:40:11.075Z"
+  "publishedAt": "2026-05-12T19:40:00.744Z"
 }
