@@ -67,7 +67,12 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
   const isPublisher = sessionStatus === 'authenticated' && !!role && canPublish(role)
 
   useEffect(() => {
-    dispatch(loadPage(initialPage))
+    try {
+      const saved = localStorage.getItem(`draft:${initialPage.slug}`)
+      dispatch(loadPage(saved ? JSON.parse(saved) : initialPage))
+    } catch {
+      dispatch(loadPage(initialPage))
+    }
   }, [dispatch, initialPage])
 
   // Persist draft to localStorage
