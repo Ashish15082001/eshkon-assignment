@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { writeFile, readFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { getToken } from 'next-auth/jwt'
 import { PageSchema } from '@/lib/schema/page'
 import { diffPages, incrementVersion } from '@/lib/semver/diff'
 import type { Page } from '@/lib/schema/page'
 
+const SECRET = process.env.NEXTAUTH_SECRET ?? 'dev-secret-replace-in-production'
 const RELEASES_DIR = join(process.cwd(), 'releases')
 
 interface Snapshot {
@@ -15,6 +17,11 @@ interface Snapshot {
 }
 
 export async function POST(req: Request) {
+  const token = await getToken({ req: req as Parameters<typeof getToken>[0]['req'], secret: SECRET })
+  if (!token || token.role !== 'publisher') {
+    return NextResponse.json({ error: 'Forbidden: publisher role required' }, { status: 403 })
+  }
+
   const body = await req.json()
   const parsed = PageSchema.safeParse(body)
 
