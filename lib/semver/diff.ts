@@ -58,11 +58,17 @@ export function diffPages(previous: Page, current: Page): DiffResult {
       }
     }
 
-    // Prop value changed → patch
     for (const key of Object.keys(currProps)) {
       if (JSON.stringify(prevProps[key]) !== JSON.stringify(currProps[key])) {
-        bump = maxBump(bump, 'patch')
-        changelog.push(`Section ${id}: prop "${key}" updated`)
+        if (!(key in prevProps)) {
+          // New optional prop added → minor
+          bump = maxBump(bump, 'minor')
+          changelog.push(`Section ${id}: prop "${key}" added`)
+        } else {
+          // Existing prop value changed → patch
+          bump = maxBump(bump, 'patch')
+          changelog.push(`Section ${id}: prop "${key}" updated`)
+        }
       }
     }
   }
