@@ -63,6 +63,21 @@ function makePreviewClient() {
 // Public adapter — the only thing that escapes this file is Page
 // ---------------------------------------------------------------------------
 
+export async function getAllPages(preview = false): Promise<Pick<Page, 'slug' | 'title'>[]> {
+  const client = preview ? makePreviewClient() : makeDeliveryClient()
+
+  const result = await client.getEntries<PageSkeleton>({
+    content_type: 'page',
+    select: ['fields.slug', 'fields.title'],
+    limit: 200,
+  })
+
+  return result.items.map((entry) => ({
+    slug: entry.fields.slug,
+    title: entry.fields.title,
+  }))
+}
+
 export async function getPageBySlug(slug: string, preview = false): Promise<Page | null> {
   const client = preview ? makePreviewClient() : makeDeliveryClient()
 
