@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { PageSchema } from '@/lib/schema/page'
 import type { Page } from '@/lib/schema/page'
 import { sectionRegistry, type RegisteredSectionType } from '@/lib/registry/sectionRegistry'
 import { useAppDispatch, useAppSelector } from '@/store'
@@ -68,11 +69,19 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(`draft:${initialPage.slug}`)
-      dispatch(loadPage(saved ? JSON.parse(saved) : initialPage))
+      const raw = localStorage.getItem(`draft:${initialPage.slug}`)
+      if (raw) {
+        const parsed = PageSchema.safeParse(JSON.parse(raw))
+        if (parsed.success) {
+          dispatch(loadPage(parsed.data))
+          return
+        }
+        localStorage.removeItem(`draft:${initialPage.slug}`)
+      }
     } catch {
-      dispatch(loadPage(initialPage))
+      // ignore
     }
+    dispatch(loadPage(initialPage))
   }, [dispatch, initialPage])
 
   // Persist draft to localStorage
