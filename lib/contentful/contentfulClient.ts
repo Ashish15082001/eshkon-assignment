@@ -125,18 +125,23 @@ export async function getAllPages(preview = false): Promise<Pick<Page, 'slug' | 
     return MOCK_PAGES
   }
 
-  const client = preview ? makePreviewClient() : makeDeliveryClient()
+  try {
+    const client = preview ? makePreviewClient() : makeDeliveryClient()
 
-  const result = await client.getEntries<PageSkeleton>({
-    content_type: 'page',
-    select: ['fields.slug', 'fields.title'],
-    limit: 200,
-  })
+    const result = await client.getEntries<PageSkeleton>({
+      content_type: 'page',
+      select: ['fields.slug', 'fields.title'],
+      limit: 200,
+    })
 
-  return result.items.map((entry) => ({
-    slug: entry.fields.slug,
-    title: entry.fields.title,
-  }))
+    return result.items.map((entry) => ({
+      slug: entry.fields.slug,
+      title: entry.fields.title,
+    }))
+  } catch (err) {
+    console.error('[contentfulClient] getAllPages failed:', err)
+    return MOCK_PAGES
+  }
 }
 
 export async function getPageBySlug(slug: string, preview = false): Promise<Page | null> {
