@@ -23,12 +23,18 @@ function SectionSlot({ section }: { section: AnySection }) {
   )
 }
 
-export default function PageRenderer({ page }: { page: RenderablePage }) {
+export default function PageRenderer({
+  page,
+  as: Wrapper = 'main',
+}: {
+  page: RenderablePage
+  as?: 'main' | 'div'
+}) {
   return (
-    <main>
+    <Wrapper id={Wrapper === 'main' ? 'main-content' : undefined}>
       {page.sections.map((section) => (
         <SectionSlot key={section.id} section={section} />
       ))}
-    </main>
+    </Wrapper>
   )
 }

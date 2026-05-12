@@ -49,7 +49,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-12">
+      <main id="main-content" className="mx-auto max-w-5xl px-6 py-12">
         {/* Hero line */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold tracking-tight">Pages</h1>
@@ -118,18 +118,19 @@ export default async function Home() {
                   <p className="mt-0.5 text-xs text-muted-foreground font-mono">/{page.slug}</p>
                 </div>
                 <div className="flex gap-2">
+                  {/* WCAG 2.4.9 AAA — link purpose from link text alone: include page title in sr-only span */}
                   <Link
                     href={`/preview/${page.slug}`}
                     className="flex-1 rounded-md border border-border px-3 py-1.5 text-center text-sm hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    Preview
+                    Preview<span className="sr-only"> {page.title}</span>
                   </Link>
                   {isEditor && (
                     <Link
                       href={`/studio/${page.slug}`}
                       className="flex-1 rounded-md bg-primary px-3 py-1.5 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      Edit
+                      Edit<span className="sr-only"> {page.title}</span>
                     </Link>
                   )}
                 </div>

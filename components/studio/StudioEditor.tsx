@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { PageSchema } from '@/lib/schema/page'
 import type { Page } from '@/lib/schema/page'
@@ -19,38 +19,90 @@ const SECTION_TYPES = Object.keys(sectionRegistry) as RegisteredSectionType[]
 
 function AddSectionButton({ onAdd }: { onAdd: (type: RegisteredSectionType) => void }) {
   const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const listId = 'add-section-listbox'
+
+  function openList() {
+    setOpen(true)
+    setActiveIndex(0)
+  }
+
+  function closeList() {
+    setOpen(false)
+    triggerRef.current?.focus()
+  }
+
+  function select(type: RegisteredSectionType) {
+    onAdd(type)
+    closeList()
+  }
+
+  function handleTriggerKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      openList()
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex(SECTION_TYPES.length - 1)
+      setOpen(true)
+    }
+  }
+
+  function handleListKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') { e.preventDefault(); closeList(); return }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex((i) => Math.min(i + 1, SECTION_TYPES.length - 1)); return }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex((i) => Math.max(i - 1, 0)); return }
+    if (e.key === 'Home') { e.preventDefault(); setActiveIndex(0); return }
+    if (e.key === 'End') { e.preventDefault(); setActiveIndex(SECTION_TYPES.length - 1); return }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(SECTION_TYPES[activeIndex]); return }
+    if (e.key === 'Tab') { closeList() }
+  }
+
+  const activeOptionId = open ? `section-option-${SECTION_TYPES[activeIndex]}` : undefined
 
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        ref={triggerRef}
+        onClick={() => (open ? closeList() : openList())}
+        onKeyDown={handleTriggerKeyDown}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={activeOptionId}
         className="w-full rounded-lg border border-dashed border-border py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         + Add section
       </button>
       {open && (
         <ul
+          id={listId}
           role="listbox"
           aria-label="Section types"
-          className="absolute left-0 right-0 z-10 mt-1 rounded-lg border border-border bg-popover shadow-lg"
+          onKeyDown={handleListKeyDown}
+          className="absolute left-0 right-0 z-10 mt-1 rounded-lg border border-border bg-popover shadow-lg focus:outline-none"
+          tabIndex={-1}
         >
-          {SECTION_TYPES.map((type) => (
-            <li key={type}>
-              <button
+          {SECTION_TYPES.map((type, i) => {
+            const label = type === 'featureGrid' ? 'Feature Grid' : type.charAt(0).toUpperCase() + type.slice(1)
+            return (
+              <li
+                key={type}
+                id={`section-option-${type}`}
                 role="option"
-                aria-selected={false}
-                onClick={() => {
-                  onAdd(type)
-                  setOpen(false)
-                }}
-                className="w-full px-4 py-2 text-left text-sm hover:bg-accent focus-visible:outline-none focus-visible:bg-accent capitalize"
+                aria-selected={i === activeIndex}
+                onClick={() => select(type)}
+                onMouseEnter={() => setActiveIndex(i)}
+                className={`px-4 py-2 text-sm cursor-pointer capitalize ${
+                  i === activeIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-accent'
+                }`}
               >
-                {type === 'featureGrid' ? 'Feature Grid' : type.charAt(0).toUpperCase() + type.slice(1)}
-              </button>
-            </li>
-          ))}
+                {label}
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
@@ -145,8 +197,11 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
       >
         {/* Header */}
         <header className="flex items-center justify-between px-4 py-3 border-b border-border">
+          {/* sr-only h1 names the Studio tool; the page title is secondary (p) to avoid
+              duplicate h1 when the preview pane renders a Hero section */}
+          <h1 className="sr-only">Page Studio — editor</h1>
           <div>
-            <h1 className="text-sm font-semibold leading-tight">{page.title}</h1>
+            <p className="text-sm font-semibold leading-tight">{page.title}</p>
             <p className="text-xs text-muted-foreground">/preview/{page.slug}</p>
           </div>
           <button
@@ -234,10 +289,10 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
       </aside>
 
       {/* Right panel — live preview */}
-      <main className="flex-1 overflow-y-auto bg-muted/30" aria-label="Page preview">
+      <main id="main-content" className="flex-1 overflow-y-auto bg-muted/30" aria-label="Page preview">
         <div className="min-h-full bg-background">
           <ErrorBoundary>
-            <PageRenderer page={page} />
+            <PageRenderer page={page} as="div" />
           </ErrorBoundary>
         </div>
       </main>

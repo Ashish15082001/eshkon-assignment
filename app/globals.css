@@ -66,7 +66,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.145 0 0); /* near-black — WCAG 2.4.12 AAA: ≥4.5:1 contrast on white bg */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -101,7 +101,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.985 0 0); /* near-white — WCAG 2.4.12 AAA: ≥4.5:1 contrast on dark bg */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -126,6 +126,15 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* WCAG 2.4.11/2.4.12 — ensure ring focus indicators have a perimeter gap so the
+   dark ring contrasts against both a dark element background and the light page bg */
+@layer base {
+  :focus-visible {
+    --tw-ring-offset-width: 2px;
+    --tw-ring-offset-color: var(--background);
   }
 }
 

@@ -40,7 +40,7 @@ function SignInForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <main id="main-content" className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight">Page Studio</h1>
@@ -111,7 +111,7 @@ function SignInForm() {
           <p className="text-xs text-muted-foreground">Click an account to fill the form, then sign in.</p>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
 

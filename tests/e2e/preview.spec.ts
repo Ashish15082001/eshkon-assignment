@@ -5,6 +5,8 @@ import { join } from 'path'
 
 type AxeResults = Awaited<ReturnType<InstanceType<typeof AxeBuilder>['analyze']>>
 
+const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']
+
 function saveAxeReport(url: string, results: AxeResults) {
   const dir = join(process.cwd(), 'tests/e2e/results')
   mkdirSync(dir, { recursive: true })
@@ -25,6 +27,44 @@ function saveAxeReport(url: string, results: AxeResults) {
   )
 }
 
+test.describe('Home page', () => {
+  test('renders page list heading', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1, name: 'Pages' })).toBeVisible()
+  })
+
+  test('axe: / has no critical or serious violations', async ({ page }) => {
+    await page.goto('/')
+    const results = await new AxeBuilder({ page })
+      .withTags(AXE_TAGS)
+      .analyze()
+
+    saveAxeReport('/', results)
+
+    const blocking = results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(blocking, JSON.stringify(blocking, null, 2)).toHaveLength(0)
+  })
+})
+
+test.describe('Sign-in page', () => {
+  test('renders sign-in form', async ({ page }) => {
+    await page.goto('/auth/signin')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+
+  test('axe: /auth/signin has no critical or serious violations', async ({ page }) => {
+    await page.goto('/auth/signin')
+    const results = await new AxeBuilder({ page })
+      .withTags(AXE_TAGS)
+      .analyze()
+
+    saveAxeReport('/auth/signin', results)
+
+    const blocking = results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(blocking, JSON.stringify(blocking, null, 2)).toHaveLength(0)
+  })
+})
+
 test.describe('Preview route', () => {
   test('renders hero section on /preview/home', async ({ page }) => {
     await page.goto('/preview/home')
@@ -42,16 +82,16 @@ test.describe('Preview route', () => {
     await expect(link.first()).toBeVisible()
   })
 
-  test('axe: /preview/home has no critical violations', async ({ page }) => {
+  test('axe: /preview/home has no critical or serious violations', async ({ page }) => {
     await page.goto('/preview/home')
     const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .withTags(AXE_TAGS)
       .analyze()
 
     saveAxeReport('/preview/home', results)
 
-    const critical = results.violations.filter((v) => v.impact === 'critical')
-    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0)
+    const blocking = results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(blocking, JSON.stringify(blocking, null, 2)).toHaveLength(0)
   })
 })
 
@@ -84,17 +124,17 @@ test.describe('Studio route (authenticated editor)', () => {
     await expect(page.getByRole('listitem').filter({ hasText: 'Hero' })).toBeVisible()
   })
 
-  test('axe: /studio/home has no critical violations', async ({ page }) => {
+  test('axe: /studio/home has no critical or serious violations', async ({ page }) => {
     await page.goto('/studio/home')
     await expect(page.getByRole('complementary', { name: 'Studio sidebar' })).toBeVisible()
 
     const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .withTags(AXE_TAGS)
       .analyze()
 
     saveAxeReport('/studio/home', results)
 
-    const critical = results.violations.filter((v) => v.impact === 'critical')
-    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0)
+    const blocking = results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(blocking, JSON.stringify(blocking, null, 2)).toHaveLength(0)
   })
 })

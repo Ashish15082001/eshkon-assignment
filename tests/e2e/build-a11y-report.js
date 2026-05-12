@@ -25,7 +25,10 @@ fs.writeFileSync(path.join(dir, 'a11y-report.json'), JSON.stringify(report, null
 console.log(`a11y-report.json: ${pages.length} page(s) scanned`)
 console.log(`Summary: ${JSON.stringify(report.summary)}`)
 
-if (report.summary.critical > 0) {
-  console.error(`FAIL: ${report.summary.critical} critical accessibility violation(s) found`)
+const blocking = report.summary.critical + report.summary.serious
+if (blocking > 0) {
+  console.error(
+    `FAIL: ${report.summary.critical} critical + ${report.summary.serious} serious accessibility violation(s) found`
+  )
   process.exit(1)
 }

@@ -10,7 +10,7 @@ export default function CTA({ headline, label, url, subtext }: CtaProps) {
         {subtext && <p className="text-primary-foreground/80">{subtext}</p>}
         <a
           href={url}
-          className="mt-2 inline-flex items-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground shadow hover:bg-background/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-background"
+          className="mt-2 inline-flex items-center rounded-md bg-background px-6 py-3 text-sm font-semibold text-foreground shadow hover:bg-background/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
         >
           {label}
         </a>
