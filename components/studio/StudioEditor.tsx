@@ -202,7 +202,14 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
           <h1 className="sr-only">Page Studio — editor</h1>
           <div>
             <p className="text-sm font-semibold leading-tight">{page.title}</p>
-            <p className="text-xs text-muted-foreground">/preview/{page.slug}</p>
+            <a
+              href={`/preview/${page.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+            >
+              /preview/{page.slug} ↗
+            </a>
           </div>
           <button
             onClick={handlePublish}
