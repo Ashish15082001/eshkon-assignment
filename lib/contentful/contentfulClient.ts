@@ -122,11 +122,6 @@ function makePreviewClient() {
 
 export async function getAllPages(preview = false): Promise<Pick<Page, 'slug' | 'title'>[]> {
   if (preview ? !hasPreviewCredentials() : !hasDeliveryCredentials()) {
-    console.warn('[contentfulClient] getAllPages: missing credentials, returning mock data. CONTENTFUL_SPACE_ID=%s CONTENTFUL_ACCESS_TOKEN=%s CONTENTFUL_PREVIEW_TOKEN=%s',
-      process.env.CONTENTFUL_SPACE_ID ? 'set' : 'MISSING',
-      process.env.CONTENTFUL_ACCESS_TOKEN ? 'set' : 'MISSING',
-      process.env.CONTENTFUL_PREVIEW_TOKEN ? 'set' : 'MISSING',
-    )
     return MOCK_PAGES
   }
 
