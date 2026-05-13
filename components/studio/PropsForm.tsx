@@ -82,26 +82,69 @@ export default function PropsForm({ section }: PropsFormProps) {
         </form>
       )
 
-    case 'featureGrid':
+    case 'featureGrid': {
+      const features: { title: string; description: string; icon?: string }[] =
+        Array.isArray(section.props.features) ? section.props.features : []
+
+      function setFeatures(next: typeof features) {
+        dispatch(updateSectionProps({ id: section.id, props: { features: next } }))
+      }
+
       return (
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()} aria-label="Feature grid section properties">
           <Field id={`${section.id}-title`} label="Title" value={section.props.title ?? ''} onChange={(v) => set('title', v)} />
-          <Field
-            id={`${section.id}-features`}
-            label="Features (JSON)"
-            value={JSON.stringify(section.props.features, null, 2)}
-            onChange={(v) => {
-              try {
-                const parsed = JSON.parse(v)
-                dispatch(updateSectionProps({ id: section.id, props: { features: parsed } }))
-              } catch {
-                // suppress invalid JSON while typing
-              }
-            }}
-            multiline="json"
-          />
+
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Features</legend>
+
+            {features.map((feat, i) => (
+              <div key={i} className="rounded-md border border-input p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground">Feature {i + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => setFeatures(features.filter((_, idx) => idx !== i))}
+                    className="text-xs text-destructive hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                    aria-label={`Remove feature ${i + 1}`}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <Field
+                  id={`${section.id}-feat-${i}-title`}
+                  label="Title"
+                  value={feat.title}
+                  onChange={(v) => setFeatures(features.map((f, idx) => idx === i ? { ...f, title: v } : f))}
+                  required
+                />
+                <Field
+                  id={`${section.id}-feat-${i}-description`}
+                  label="Description"
+                  value={feat.description}
+                  onChange={(v) => setFeatures(features.map((f, idx) => idx === i ? { ...f, description: v } : f))}
+                  required
+                  multiline
+                />
+                <Field
+                  id={`${section.id}-feat-${i}-icon`}
+                  label="Icon (optional)"
+                  value={feat.icon ?? ''}
+                  onChange={(v) => setFeatures(features.map((f, idx) => idx === i ? { ...f, icon: v || undefined } : f))}
+                />
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setFeatures([...features, { title: '', description: '' }])}
+              className="w-full rounded-md border border-dashed border-input py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              + Add feature
+            </button>
+          </fieldset>
         </form>
       )
+    }
 
     case 'testimonial':
       return (
