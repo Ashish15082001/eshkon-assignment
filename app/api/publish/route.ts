@@ -7,7 +7,23 @@ import { diffPages, incrementVersion } from '@/lib/semver/diff'
 import type { Page } from '@/lib/schema/page'
 
 const SECRET = process.env.NEXTAUTH_SECRET ?? 'dev-secret-replace-in-production'
-const RELEASES_DIR = join(process.cwd(), 'releases')
+
+// On Vercel the project root is read-only; write to /tmp and read from both.
+const RELEASES_COMMITTED = join(process.cwd(), 'releases')
+const RELEASES_WRITE = process.env.VERCEL ? join('/tmp', 'releases') : RELEASES_COMMITTED
+
+async function readLatestSnapshot(slug: string): Promise<Snapshot | null> {
+  const candidates = [
+    join(RELEASES_WRITE, slug, 'latest.json'),
+    join(RELEASES_COMMITTED, slug, 'latest.json'),
+  ]
+  for (const p of candidates) {
+    try {
+      return JSON.parse(await readFile(p, 'utf-8')) as Snapshot
+    } catch { /* try next */ }
+  }
+  return null
+}
 
 interface Snapshot {
   version: string
@@ -30,18 +46,10 @@ export async function POST(req: Request) {
   }
 
   const current = parsed.data
-  const slugDir = join(RELEASES_DIR, current.slug)
+  const slugDir = join(RELEASES_WRITE, current.slug)
   await mkdir(slugDir, { recursive: true })
 
-  const latestPath = join(slugDir, 'latest.json')
-  let previous: Snapshot | null = null
-
-  try {
-    const raw = await readFile(latestPath, 'utf-8')
-    previous = JSON.parse(raw) as Snapshot
-  } catch {
-    // no prior release
-  }
+  const previous = await readLatestSnapshot(current.slug)
 
   if (previous) {
     const diff = diffPages(previous.page, current)
@@ -58,8 +66,9 @@ export async function POST(req: Request) {
       publishedAt: new Date().toISOString(),
     }
 
-    await writeFile(join(slugDir, `${nextVersion}.json`), JSON.stringify(snapshot, null, 2))
-    await writeFile(latestPath, JSON.stringify(snapshot, null, 2))
+    const serialised = JSON.stringify(snapshot, null, 2)
+    await writeFile(join(slugDir, `${nextVersion}.json`), serialised)
+    await writeFile(join(slugDir, 'latest.json'), serialised)
 
     return NextResponse.json({ version: nextVersion, changelog: diff.changelog })
   }
@@ -72,8 +81,9 @@ export async function POST(req: Request) {
     publishedAt: new Date().toISOString(),
   }
 
-  await writeFile(join(slugDir, '1.0.0.json'), JSON.stringify(snapshot, null, 2))
-  await writeFile(latestPath, JSON.stringify(snapshot, null, 2))
+  const serialised = JSON.stringify(snapshot, null, 2)
+  await writeFile(join(slugDir, '1.0.0.json'), serialised)
+  await writeFile(join(slugDir, 'latest.json'), serialised)
 
   return NextResponse.json({ version: '1.0.0', changelog: ['Initial release'] })
 }
