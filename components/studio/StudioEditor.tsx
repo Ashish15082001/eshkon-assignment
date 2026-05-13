@@ -146,6 +146,12 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
     }
   }, [page])
 
+  function handleDiscardDraft() {
+    if (!confirm('Discard all unsaved changes and reload from Contentful?')) return
+    try { localStorage.removeItem(`draft:${initialPage.slug}`) } catch { /* ignore */ }
+    dispatch(loadPage(initialPage))
+  }
+
   function handleAddSection(type: RegisteredSectionType) {
     const entry = sectionRegistry[type]
     const id = `${type}-${Date.now()}`
@@ -211,14 +217,24 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
               </a>
             </div>
             <p className="text-sm font-semibold leading-tight">{page.title}</p>
-            <a
-              href={`/preview/${page.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-            >
-              /preview/{page.slug} ↗
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href={`/preview/${page.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              >
+                /preview/{page.slug} ↗
+              </a>
+              <span className="text-muted-foreground text-xs">·</span>
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              >
+                Discard draft
+              </button>
+            </div>
           </div>
           <button
             onClick={handlePublish}
