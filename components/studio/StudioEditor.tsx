@@ -201,6 +201,15 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
               duplicate h1 when the preview pane renders a Hero section */}
           <h1 className="sr-only">Page Studio — editor</h1>
           <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <a
+                href="/"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                aria-label="Back to all pages"
+              >
+                ← Pages
+              </a>
+            </div>
             <p className="text-sm font-semibold leading-tight">{page.title}</p>
             <a
               href={`/preview/${page.slug}`}
