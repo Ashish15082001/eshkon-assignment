@@ -290,3 +290,130 @@ Playwright e2e tests run `@axe-core/playwright` on both `/preview` and `/studio`
 | Undo / redo | No history in Redux | `redux-undo` could wrap the `draftPage` slice; excluded to keep the store simple |
 | Selector memoization | `useAppSelector` calls are inline without `useMemo` | Not a correctness issue at this page scale, but would cause extra re-renders in a larger tree |
 | i18n | All UI strings are hardcoded English | Out of scope for this assignment |
+
+---
+
+## Short Write-up
+
+### Problem Framing
+
+The goal was to build a lightweight CMS editor that lets editors compose pages from typed content sections, preview them in real time, and publish versioned snapshots — all while meeting WCAG 2.2 AAA accessibility requirements. The core challenge is managing two distinct lifecycles in parallel: an in-memory **draft** (mutable, ephemeral, editor-owned) and a **published release** (immutable, versioned, audit-trailed). Getting that boundary right — and ensuring only authorized roles can cross it — drives most of the key decisions.
+
+---
+
+### Key Decisions and Trade-offs
+
+**Single Contentful adapter file.** All Contentful SDK imports are isolated to `lib/contentful/contentfulClient.ts`. Everything downstream works with plain TypeScript types. This makes the mock fallback trivial and keeps the rest of the codebase free of vendor coupling. The trade-off is one extra indirection layer, but the isolation pays for itself in testability.
+
+**Zod discriminated unions for sections.** Each section type (`hero`, `featureGrid`, `testimonial`, `cta`) has its own Zod schema. The editor uses the union for type narrowing in the props form; unknown types are preserved as `UnknownSection` and rendered as `<UnsupportedSection>`. This means a bad Contentful entry never crashes the editor — it degrades gracefully.
+
+**File-based immutable release snapshots.** Each publish writes both `releases/{slug}/{version}.json` (immutable archive) and `releases/{slug}/latest.json` (current pointer). No database is needed. The trade-off is that the audit trail grows on disk and rollback is manual, but for this scope it is the simplest correct approach.
+
+**SemVer diff by semantic priority.** The diff algorithm classifies changes into none / patch / minor / major and takes the highest severity across all detected changes. Section removal always beats section addition. This makes the logic compositional and predictable. The trade-off is coarseness — it cannot distinguish a headline typo from a structural prop change — but it errs on the safe side.
+
+**Redux for draft and publish state.** Draft edits are frequent, fine-grained, and need to feed both the editor UI and the live preview simultaneously. Redux suits this better than local state. The trade-off is boilerplate; mitigated by RTK.
+
+---
+
+### Assumptions
+
+- Pages are identified by slug, which is stable and unique across Contentful.
+- The first publish of any slug always starts at `1.0.0`.
+- A publish with no detected changes returns early without writing a new file — idempotent by design.
+- Authentication is credential-based with hardcoded users; real deployments would replace this with an identity provider.
+- The Contentful space contains entries matching the expected `type` / `props` field structure. The adapter validates with Zod and returns `null` on failure.
+- `releases/` is committed to source control for this assignment (simulating a persistent store). In production this would be a database or object store.
+
+---
+
+### What Is Not Included and Why
+
+See **Section 6** for the full table. The most significant omissions are:
+
+- **Draft hydration on reload** — `localStorage` is written on every edit but never read back on page load. Avoided `redux-persist` to keep the dependency count low.
+- **Rollback UI** — versioned JSON files exist on disk; there is no UI to restore a previous version.
+- **Real database or object storage** — file-system writes keep the publish flow simple and dependency-free for the assignment.
+- **Inline image upload** — image URLs are entered as strings; no media library integration.
+
+---
+
+### Architecture Overview
+
+```
+Browser
+  └─ App Router (Next.js 16)
+       ├─ /                  → page list (server fetch from Contentful)
+       ├─ /studio/[slug]     → editor (auth-gated, client-heavy, Redux-backed)
+       ├─ /preview/[slug]    → read-only rendered page (server fetch)
+       ├─ /api/publish       → POST handler (auth + RBAC, writes release files)
+       └─ /api/auth          → NextAuth credentials
+
+Shared logic (lib/)
+  ├─ contentful/             → single adapter; all other code uses plain types
+  ├─ schema/                 → Zod schemas (Page, Section, per-type props)
+  ├─ semver/                 → diff algorithm + version incrementer
+  ├─ rbac/                   → role definitions + canEdit / canPublish helpers
+  └─ registry/               → sectionType → { component, defaultProps, schema }
+```
+
+Middleware enforces auth before any `/studio/*` or `/api/publish` request reaches the application. The section registry is the single join point between types, components, and defaults — adding a new section type requires one registry entry and one Zod schema, nothing else.
+
+---
+
+### Redux Slice Responsibilities
+
+| Slice | What it holds | Key actions |
+|---|---|---|
+| `draftPage` | The in-editor `Page` object | `loadPage`, `addSection`, `reorderSections`, `updateSectionProps`, `removeSection` |
+| `ui` | Transient editor state (selection, sidebar, save status) | `selectSection`, `toggleSidebar`, `setSaveStatus` |
+| `publish` | Lifecycle of the current publish request | `publishStart`, `publishSuccess`, `publishError`, `resetPublish` |
+
+`draftPage` is the only slice that matters for data correctness; `ui` and `publish` exist to avoid prop-drilling transient UI and async-request state through the component tree.
+
+---
+
+### Contentful Model and Adapter
+
+Contentful entries follow the structure `{ slug, title, sections[] }` where each section entry has `{ type: string, props: Record<string, unknown> }`. The adapter (`lib/contentful/contentfulClient.ts`) maps this to the internal `Page` / `Section` types via `PageSchema.safeParse`. Unknown `type` values do not throw — they produce `UnknownSection` records, which the renderer shows as a labelled placeholder. If Contentful credentials are absent (local development), the adapter returns hardcoded mock data so the editor works offline.
+
+The transform pipeline:
+
+```
+Raw Contentful Entry
+  → extract sys.id           as section.id
+  → extract fields.type      as section.type
+  → extract fields.props     as section.props
+  → filter nulls
+  → PageSchema.safeParse(…)
+  → Page | null
+```
+
+---
+
+### Publish and SemVer Logic
+
+On `POST /api/publish` the handler reads the previous `latest.json` (if any), calls `diffPages(previous.page, current)` to classify the delta, increments the version, then writes two files. Diff rules in priority order:
+
+| Change | Bump | Reasoning |
+|---|---|---|
+| Section removed | **major** | Breaks any consumer expecting that section |
+| Section type changed | **major** | Structural breaking change |
+| Section added | **minor** | Backwards-compatible new content |
+| Prop value changed | **patch** | Content update, no structural change |
+| No difference | **none** | Idempotent — nothing written |
+
+`maxBump()` resolves concurrent changes to the highest severity: a simultaneous removal and addition produces a **major** bump. The first publish always produces `1.0.0`.
+
+---
+
+### Accessibility Approach
+
+The target is WCAG 2.2 AAA, enforced in CI via `@axe-core/playwright`. Key decisions:
+
+- **Skip link** is the first focusable element in the root layout, hidden until focused, linking to `id="main-content"` on every page.
+- **Focus rings** use `focus-visible:ring-2` throughout with a high-contrast ring token (~14:1 on white). No `outline: none` without a replacement.
+- **Semantic HTML** is used throughout (`<main>`, `<header>`, `<aside>`, `<nav>`, `<section aria-labelledby>`, `<figure>` / `<figcaption>` for testimonials).
+- **ARIA patterns**: full listbox pattern on the Add Section dropdown (arrow keys, Home/End, Enter, Escape); `aria-invalid` + `aria-describedby` on form fields with validation errors; `role="status" aria-live="polite"` on the publish success banner so the announcement does not steal focus.
+- **Keyboard drag-and-drop**: `@dnd-kit` is configured with both `PointerSensor` and `KeyboardSensor`, making section reordering fully keyboard-accessible.
+- **Reduced motion**: a global `@media (prefers-reduced-motion: reduce)` block in `globals.css` strips all animations and transitions.
+- **CI gate**: Playwright axe scans run on `/`, `/auth/signin`, `/preview/Home`, and `/studio/Home`; any critical or serious violation fails the build.
