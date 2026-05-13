@@ -18,7 +18,7 @@ function Field({
   value: string
   onChange: (v: string) => void
   required?: boolean
-  multiline?: boolean
+  multiline?: boolean | 'json'
 }) {
   const [touched, setTouched] = useState(false)
   const inputId = `prop-${id}`
@@ -45,7 +45,7 @@ function Field({
       </label>
 
       {multiline ? (
-        <textarea {...sharedProps} rows={3} onChange={(e) => onChange(e.target.value)} className={`${sharedProps.className} resize-y`} />
+        <textarea {...sharedProps} rows={multiline === 'json' ? 10 : 3} onChange={(e) => onChange(e.target.value)} className={`${sharedProps.className} resize-y font-mono text-xs`} />
       ) : (
         <input {...sharedProps} type="text" onChange={(e) => onChange(e.target.value)} />
       )}
@@ -98,7 +98,7 @@ export default function PropsForm({ section }: PropsFormProps) {
                 // suppress invalid JSON while typing
               }
             }}
-            multiline
+            multiline="json"
           />
         </form>
       )
