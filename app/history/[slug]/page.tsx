@@ -16,8 +16,6 @@ export default async function HistoryPage({ params }: { params: Params }) {
   const { slug } = await params
   const versions = await listVersions(slug)
 
-  if (versions.length === 0) notFound()
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
@@ -34,6 +32,21 @@ export default async function HistoryPage({ params }: { params: Params }) {
       </header>
 
       <main id="main-content" className="mx-auto max-w-3xl px-6 py-10">
+        {versions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <p className="text-4xl mb-4">📭</p>
+            <h2 className="text-lg font-semibold">No versions yet</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Publish this page from the Studio to create the first release.
+            </p>
+            <Link
+              href={`/studio/${slug}`}
+              className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Open Studio
+            </Link>
+          </div>
+        ) : (
         <ol className="space-y-4" aria-label="Published versions">
           {versions.map((snap, i) => (
             <li
@@ -71,6 +84,7 @@ export default async function HistoryPage({ params }: { params: Params }) {
             </li>
           ))}
         </ol>
+        )}
       </main>
     </div>
   )
