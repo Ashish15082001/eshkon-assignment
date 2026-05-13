@@ -259,6 +259,14 @@ export default function StudioEditor({ initialPage }: { initialPage: Page }) {
               >
                 View page ↗
               </a>
+              <a
+                href={`/history/${page.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-800"
+              >
+                Version history ↗
+              </a>
               <button
                 onClick={() => dispatch(resetPublish())}
                 className="underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-800"

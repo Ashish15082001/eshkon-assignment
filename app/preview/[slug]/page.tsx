@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import Link from 'next/link'
 import { getPageBySlug } from '@/lib/contentful/contentfulClient'
 import PageRenderer from '@/components/PageRenderer'
 import ErrorBoundary from '@/components/shared/ErrorBoundary'
@@ -48,8 +49,28 @@ export default async function PreviewPage({
   }
 
   return (
-    <ErrorBoundary>
-      <PageRenderer page={page} />
-    </ErrorBoundary>
+    <div>
+      <div className="border-b border-border bg-background/95 backdrop-blur px-4 py-2 flex items-center justify-between text-sm">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          >
+            ← Pages
+          </Link>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-semibold">{page.title}</span>
+        </div>
+        <Link
+          href={`/history/${slug}`}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+        >
+          Version history
+        </Link>
+      </div>
+      <ErrorBoundary>
+        <PageRenderer page={page} />
+      </ErrorBoundary>
+    </div>
   )
 }
